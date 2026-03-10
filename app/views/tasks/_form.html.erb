@@ -1,0 +1,56 @@
+<%= form_with(model: task, style: "max-width:600px;") do |form| %>
+  <% if task.errors.any? %>
+    <div style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:6px;margin-bottom:16px;">
+      <ul style="margin:0;padding-left:16px;">
+        <% task.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="margin-bottom:16px;">
+    <%= form.label :title, "タイトル *", style: "display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;" %>
+    <%= form.text_field :title, style: "width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box;", placeholder: "タスクのタイトル" %>
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <%= form.label :description, "説明", style: "display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;" %>
+    <%= form.text_area :description, rows: 4, style: "width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box;resize:vertical;", placeholder: "タスクの詳細説明（任意）" %>
+  </div>
+
+  <div style="display:flex;gap:16px;margin-bottom:16px;">
+    <div style="flex:1;">
+      <%= form.label :status, "ステータス", style: "display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;" %>
+      <%= form.select :status,
+        [["未着手", "pending"], ["進行中", "in_progress"], ["完了", "done"]],
+        {},
+        style: "width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box;" %>
+    </div>
+
+    <div style="flex:1;">
+      <%= form.label :due_date, "期限", style: "display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;" %>
+      <%= form.date_field :due_date, style: "width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box;" %>
+    </div>
+  </div>
+
+  <% if tags.any? %>
+    <div style="margin-bottom:24px;">
+      <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;">タグ</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <% tags.each do |tag| %>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:2px solid <%= task.tags.include?(tag) ? tag.color : '#e2e8f0' %>;border-radius:20px;background:<%= task.tags.include?(tag) ? tag.color + '20' : 'white' %>;">
+            <%= check_box_tag "task[tag_ids][]", tag.id, task.tags.include?(tag), style: "cursor:pointer;" %>
+            <span style="font-size:13px;color:<%= tag.color %>;">● <%= tag.name %></span>
+          </label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div style="display:flex;gap:12px;">
+    <%= form.submit task.new_record? ? "作成" : "更新",
+      style: "background:#6366f1;color:white;padding:10px 24px;border-radius:6px;border:none;font-size:14px;font-weight:600;cursor:pointer;" %>
+    <%= link_to "キャンセル", tasks_path, style: "padding:10px 24px;color:#64748b;font-size:14px;text-decoration:none;" %>
+  </div>
+<% end %>

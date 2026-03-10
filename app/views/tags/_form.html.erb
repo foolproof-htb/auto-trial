@@ -1,0 +1,50 @@
+<%= form_with(model: tag, style: "max-width:400px;") do |form| %>
+  <% if tag.errors.any? %>
+    <div style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:6px;margin-bottom:16px;">
+      <ul style="margin:0;padding-left:16px;">
+        <% tag.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="margin-bottom:16px;">
+    <%= form.label :name, "タグ名 *", style: "display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;" %>
+    <%= form.text_field :name, style: "width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box;", placeholder: "例: 重要, バグ, 機能追加" %>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <%= form.label :color, "カラー", style: "display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;" %>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <% [
+        ["#6366f1", "インディゴ"],
+        ["#3b82f6", "ブルー"],
+        ["#22c55e", "グリーン"],
+        ["#f59e0b", "アンバー"],
+        ["#ef4444", "レッド"],
+        ["#8b5cf6", "バイオレット"],
+        ["#ec4899", "ピンク"],
+        ["#14b8a6", "ティール"],
+        ["#64748b", "グレー"],
+        ["#f97316", "オレンジ"],
+      ].each do |color_val, label| %>
+        <label style="cursor:pointer;" title="<%= label %>">
+          <%= radio_button_tag "tag[color]", color_val, tag.color == color_val, style: "display:none;" %>
+          <div style="width:28px;height:28px;border-radius:50%;background:<%= color_val %>;border:3px solid <%= tag.color == color_val ? '#1e293b' : 'transparent' %>;"></div>
+        </label>
+      <% end %>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:13px;color:#64748b;">カスタム:</span>
+      <%= form.color_field :color, style: "width:40px;height:36px;padding:2px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;" %>
+      <%= form.text_field :color, style: "width:120px;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;", placeholder: "#6366f1" %>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;">
+    <%= form.submit tag.new_record? ? "作成" : "更新",
+      style: "background:#6366f1;color:white;padding:10px 24px;border-radius:6px;border:none;font-size:14px;font-weight:600;cursor:pointer;" %>
+    <%= link_to "キャンセル", tags_path, style: "padding:10px 24px;color:#64748b;font-size:14px;text-decoration:none;" %>
+  </div>
+<% end %>

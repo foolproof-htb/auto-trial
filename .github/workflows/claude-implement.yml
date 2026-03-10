@@ -1,0 +1,117 @@
+name: Claude Auto-Implement
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  implement:
+    if: github.event.label.name == 'claude'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    services:
+      db:
+        image: mariadb:11.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: auto_trial_test
+          MYSQL_USER: app
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      RAILS_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: app
+      DB_PASSWORD: password
+      DB_NAME_TEST: auto_trial_test
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Create feature branch
+        id: branch
+        run: |
+          BRANCH="claude/issue-${{ github.event.issue.number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y default-libmysqlclient-dev libvips
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.2'
+          bundler-cache: true
+
+      - name: Prepare test database
+        run: bundle exec rails db:test:prepare
+
+      - name: Implement with Claude Code
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          mode: agent
+          allowed_tools: "Bash,Edit,MultiEdit,Glob,Grep,LS,Read,Write"
+          direct_prompt: |
+            以下のGitHub Issueの指示に従って実装してください。
+
+            ## Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+
+            ## 実装のガイドライン
+            - Rubyのコーディング規約（RuboCop）に従ってください
+            - 実装後、以下のコマンドでテストとlintチェックを実行してください:
+              - テスト: `bundle exec rspec`
+              - Lint: `bundle exec rubocop`
+            - lintエラーがあれば `bundle exec rubocop -a` で自動修正してください
+            - すべてのテストが通ることを確認してから完了としてください
+
+      - name: Commit changes
+        id: commit
+        run: |
+          git add -A
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "feat: ${{ github.event.issue.title }}
+
+            Closes #${{ github.event.issue.number }}"
+            git push -u origin "${{ steps.branch.outputs.name }}"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR
+        if: steps.commit.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_URL=$(gh pr create \
+            --title "${{ github.event.issue.title }}" \
+            --body "$(printf '## 概要\n\nCloses #${{ github.event.issue.number }}\n\n## スクリーンショット\n\n（必要に応じて追加してください）')" \
+            --base main \
+            --head "${{ steps.branch.outputs.name }}")
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "実装が完了しました。PRを作成しました: $PR_URL"

@@ -1,0 +1,73 @@
+name: Daily Bug Review
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # JST 9:00
+  workflow_dispatch:
+
+jobs:
+  bug-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Analyze with Claude Code
+        uses: anthropics/claude-code-action@beta
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          mode: agent
+          allowed_tools: "Bash,Glob,Grep,LS,Read"
+          direct_prompt: |
+            mainブランチのコード全体を精査し、バグが発生しうる箇所を特定してください。
+
+            ## 精査対象
+
+            以下のファイルをすべて読んで確認してください。
+
+            - app/models/ - バリデーション、アソシエーション、DB制約との整合性
+            - app/controllers/ - 認可チェック、Strong Parameters、エラーハンドリング
+            - config/routes.rb - エンドポイントの公開範囲
+            - db/schema.rb - インデックス、NOT NULL制約、外部キー制約の不足
+
+            ## 確認ポイント
+
+            - バリデーション漏れ（必須項目、フォーマット、長さなど）
+            - N+1クエリの可能性
+            - nilチェック漏れ（NoMethodError の発生しうる箇所）
+            - SQLインジェクション・XSSなどのセキュリティリスク
+            - タグの重複登録・不整合の可能性
+
+            ## 問題が見つかった場合
+
+            まず `gh issue list --state open` で既存のオープンイシューを確認してください。
+            特定した問題と同じ内容のイシューが既に存在する場合は、新規作成せずスキップしてください。
+
+            新規の問題のみ `gh issue create` でGitHubイシューを作成してください。
+            問題が複数ある場合は1件ずつ別のイシューとして作成してください。
+
+            イシューの形式:
+            - タイトル: 問題を端的に（例: "Tagモデルにcolorのフォーマットバリデーションがない"）
+            - 本文:
+              ## 対象箇所
+              ファイル名と行番号
+
+              ## 問題の説明
+              何が問題か
+
+              ## 想定される影響
+              どのような不具合・障害が起きうるか
+
+              ## 対処方法
+              修正の提案
+
+            問題が見つからない場合はイシューを作成しないでください。

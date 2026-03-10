@@ -1,0 +1,87 @@
+<% content_for :title, "タスク一覧" %>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <h1 style="font-size:24px;font-weight:bold;color:#1e293b;">タスク一覧</h1>
+  <%= link_to "＋ 新規タスク", new_task_path, style: "background:#6366f1;color:white;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:14px;" %>
+</div>
+
+<%# フィルター %>
+<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+  <%= link_to "すべて", tasks_path, style: "padding:6px 14px;border-radius:20px;font-size:13px;text-decoration:none;#{params[:status].blank? && params[:tag_id].blank? ? 'background:#6366f1;color:white;' : 'background:#e2e8f0;color:#475569;'}" %>
+  <% Task.statuses.each_key do |s| %>
+    <%= link_to({ status: s }, style: "padding:6px 14px;border-radius:20px;font-size:13px;text-decoration:none;#{params[:status] == s ? 'background:#6366f1;color:white;' : 'background:#e2e8f0;color:#475569;'}") do %>
+      <%= Task.human_attribute_name("status/#{s}") rescue s %>
+    <% end %>
+  <% end %>
+</div>
+
+<%# タグフィルター %>
+<% if @tags.any? %>
+  <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+    <span style="font-size:13px;color:#64748b;">タグ:</span>
+    <%= link_to "すべて", tasks_path(status: params[:status]), style: "padding:4px 10px;border-radius:12px;font-size:12px;text-decoration:none;#{params[:tag_id].blank? ? 'background:#64748b;color:white;' : 'background:#e2e8f0;color:#475569;'}" %>
+    <% @tags.each do |tag| %>
+      <%= link_to tasks_path(tag_id: tag.id, status: params[:status]), style: "padding:4px 10px;border-radius:12px;font-size:12px;text-decoration:none;color:white;background:#{tag.color};#{params[:tag_id] == tag.id.to_s ? 'outline:2px solid #1e293b;' : ''}" do %>
+        <%= tag.name %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @tasks.empty? %>
+  <div style="text-align:center;padding:48px;color:#94a3b8;">
+    <p style="font-size:16px;">タスクがありません</p>
+    <%= link_to "最初のタスクを作成する", new_task_path, style: "color:#6366f1;" %>
+  </div>
+<% else %>
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <% @tasks.each do |task| %>
+      <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;
+        <%= task.done? ? 'opacity:0.6;' : '' %>
+        <%= task.due_date && task.due_date < Date.today && !task.done? ? 'border-left:4px solid #ef4444;' : 'border-left:4px solid ' + (task.done? ? '#22c55e' : task.in_progress? ? '#f59e0b' : '#e2e8f0') + ';' %>">
+
+        <%# ステータスバッジ %>
+        <div style="min-width:80px;">
+          <% status_color = task.pending? ? '#94a3b8' : task.in_progress? ? '#f59e0b' : '#22c55e' %>
+          <span style="background:<%= status_color %>20;color:<%= status_color %>;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:500;">
+            <%= { "pending" => "未着手", "in_progress" => "進行中", "done" => "完了" }[task.status] %>
+          </span>
+        </div>
+
+        <%# タスク情報 %>
+        <div style="flex:1;">
+          <div style="font-weight:600;color:#1e293b;margin-bottom:4px;"><%= task.title %></div>
+          <% if task.description.present? %>
+            <div style="font-size:13px;color:#64748b;margin-bottom:6px;"><%= truncate(task.description, length: 100) %></div>
+          <% end %>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <% if task.due_date %>
+              <% overdue = task.due_date < Date.today && !task.done? %>
+              <span style="font-size:12px;color:<%= overdue ? '#ef4444' : '#64748b' %>;">
+                期限: <%= task.due_date.strftime("%Y/%m/%d") %><%= " (期限超過)" if overdue %>
+              </span>
+            <% end %>
+            <% task.tags.each do |tag| %>
+              <span style="background:<%= tag.color %>;color:white;padding:2px 8px;border-radius:10px;font-size:11px;"><%= tag.name %></span>
+            <% end %>
+          </div>
+        </div>
+
+        <%# アクション %>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <% unless task.done? %>
+            <% next_status = task.pending? ? "in_progress" : "done" %>
+            <%= button_to({ action: :update_status, id: task.id }, method: :patch, params: { status: next_status },
+              style: "background:#e2e8f0;color:#475569;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;border:none;") do %>
+              <%= task.pending? ? "開始" : "完了" %>
+            <% end %>
+          <% end %>
+          <%= link_to "編集", edit_task_path(task), style: "color:#6366f1;font-size:13px;text-decoration:none;" %>
+          <%= button_to "削除", task_path(task), method: :delete,
+            data: { turbo_confirm: "削除しますか？" },
+            style: "background:none;border:none;color:#ef4444;font-size:13px;cursor:pointer;padding:0;" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
