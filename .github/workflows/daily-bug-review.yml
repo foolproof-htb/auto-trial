@@ -1,8 +1,6 @@
 name: Daily Bug Review
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # JST 9:00
   workflow_dispatch:
 
 jobs:
