@@ -99,7 +99,7 @@ jobs:
             git commit -m "feat: ${{ github.event.issue.title }}
 
             Closes #${{ github.event.issue.number }}"
-            git push -u origin "${{ steps.branch.outputs.name }}"
+            git push -u origin "${{ steps.branch.outputs.name }}" --force-with-lease
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
