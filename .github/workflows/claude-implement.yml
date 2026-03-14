@@ -107,11 +107,38 @@ jobs:
         if: steps.commit.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          BRANCH_NAME: ${{ steps.branch.outputs.name }}
         run: |
+          {
+            echo "## 関連 Issue"
+            echo ""
+            echo "Closes #${ISSUE_NUMBER}"
+            echo ""
+            echo "## 問題"
+            echo ""
+            echo "${ISSUE_BODY}"
+            echo ""
+            echo "## 原因"
+            echo ""
+            echo "（Claude が実装時に特定した根本原因をここに記載）"
+            echo ""
+            echo "## 対応内容"
+            echo ""
+            echo "（変更したファイル・実装方針の概要をここに記載）"
+            echo ""
+            echo "## レビューのポイント"
+            echo ""
+            echo "- ロジックの正確性"
+            echo "- バリデーション・エラー処理の漏れ"
+            echo "- テストカバレッジ"
+          } > /tmp/pr_body.md
           PR_URL=$(gh pr create \
-            --title "${{ github.event.issue.title }}" \
-            --body "$(printf '## 概要\n\nCloses #${{ github.event.issue.number }}\n\n## スクリーンショット\n\n（必要に応じて追加してください）')" \
+            --title "${ISSUE_TITLE}" \
+            --body-file /tmp/pr_body.md \
             --base main \
-            --head "${{ steps.branch.outputs.name }}")
-          gh issue comment "${{ github.event.issue.number }}" \
-            --body "実装が完了しました。PRを作成しました: $PR_URL"
+            --head "${BRANCH_NAME}")
+          gh issue comment "${ISSUE_NUMBER}" \
+            --body "実装が完了しました。PRを作成しました: ${PR_URL}"
