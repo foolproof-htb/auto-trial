@@ -10,6 +10,7 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./docker/mysql:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_PASSWORD:-password}"]
       interval: 10s
