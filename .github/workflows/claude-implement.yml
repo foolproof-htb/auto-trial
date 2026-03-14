@@ -65,9 +65,7 @@ jobs:
           bundler-cache: true
 
       - name: Prepare test database
-        run: |
-          bundle exec rails db:migrate
-          git restore db/schema.rb 2>/dev/null || true
+        run: bundle exec rails db:migrate
 
       - name: Implement with Claude Code
         uses: anthropics/claude-code-action@beta
