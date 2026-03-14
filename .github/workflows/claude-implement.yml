@@ -65,7 +65,9 @@ jobs:
           bundler-cache: true
 
       - name: Prepare test database
-        run: bundle exec rails db:migrate
+        run: |
+          bundle exec rails db:migrate
+          git restore db/schema.rb 2>/dev/null || true
 
       - name: Implement with Claude Code
         uses: anthropics/claude-code-action@beta
@@ -75,19 +77,23 @@ jobs:
           mode: agent
           allowed_tools: "Bash,Edit,MultiEdit,Glob,Grep,LS,Read,Write"
           direct_prompt: |
-            以下のGitHub Issueの指示に従って実装してください。
+            以下のGitHub Issueの内容をコードで実装してください。
 
             ## Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
             ${{ github.event.issue.body }}
 
-            ## 実装のガイドライン
-            - Rubyのコーディング規約（RuboCop）に従ってください
-            - 実装後、以下のコマンドでテストとlintチェックを実行してください:
-              - テスト: `bundle exec rspec`
-              - Lint: `bundle exec rubocop`
-            - lintエラーがあれば `bundle exec rubocop -a` で自動修正してください
-            - すべてのテストが通ることを確認してから完了としてください
+            ## 実装の手順
+
+            1. 関連するファイルを Read ツールで読んで現状を把握する
+            2. 問題を修正するコードを Edit/Write ツールで実際に書く（必ずファイルを変更すること）
+            3. `bundle exec rspec` でテストを実行し、すべて通ることを確認する
+            4. `bundle exec rubocop` でlintチェックし、エラーがあれば `bundle exec rubocop -a` で修正する
+
+            ## 注意事項
+            - db/schema.rb は変更しないでください（マイグレーションが必要な場合のみ db/migrate/ に追加）
+            - コードの変更なしに完了としないでください。必ず app/ や spec/ 以下のファイルを編集すること
+            - テストが存在しない場合は spec/ に追加してください
 
       - name: Commit changes
         id: commit
