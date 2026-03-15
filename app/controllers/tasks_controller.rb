@@ -22,7 +22,7 @@ class TasksController < ApplicationController
 
   def create
     @task = Task.new(task_params)
-    @task.tag_ids = params[:task][:tag_ids].reject(&:blank?) if params[:task][:tag_ids]
+    @task.tag_ids = task_params[:tag_ids].reject(&:blank?) if task_params[:tag_ids]
 
     if @task.save
       redirect_to tasks_path, notice: "タスクを作成しました。"
@@ -33,7 +33,7 @@ class TasksController < ApplicationController
   end
 
   def update
-    @task.tag_ids = params[:task][:tag_ids].reject(&:blank?) if params[:task][:tag_ids]
+    @task.tag_ids = task_params[:tag_ids].reject(&:blank?) if task_params[:tag_ids]
 
     if @task.update(task_params)
       redirect_to tasks_path, notice: "タスクを更新しました。"
@@ -60,6 +60,6 @@ class TasksController < ApplicationController
   end
 
   def task_params
-    params.require(:task).permit(:title, :description, :status, :due_date)
+    params.require(:task).permit(:title, :description, :status, :due_date, tag_ids: [])
   end
 end
