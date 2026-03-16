@@ -4,7 +4,7 @@ class TasksController < ApplicationController
   def index
     @tasks = Task.includes(:tags).by_due_date
     @tasks = @tasks.where(status: params[:status]) if params[:status].present?
-    @tasks = @tasks.joins(:tags).where(tags: { id: params[:tag_id] }) if params[:tag_id].present?
+    @tasks = @tasks.where(tags: { id: params[:tag_id] }).references(:tags) if params[:tag_id].present?
     @tags = Tag.order(:name)
   end
 
