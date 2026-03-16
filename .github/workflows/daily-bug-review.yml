@@ -16,6 +16,9 @@ jobs:
         with:
           ref: main
 
+      - name: Start collapsible log section
+        run: echo '<details><summary>実行ログ</summary>' >> $GITHUB_STEP_SUMMARY
+
       - name: Analyze with Claude Code
         uses: anthropics/claude-code-action@beta
         env:
@@ -73,3 +76,19 @@ jobs:
 
             すべての処理が完了したら、作成したイシューの一覧（タイトルとURL）のみを出力してください。
             問題がなければ「指摘事項なし」とだけ出力してください。
+
+            最後に、以下の形式で /tmp/result.md にも同じ内容を書き出してください（Bashツールを使用）:
+            - 作成したイシューがある場合: 各イシューをタイトルとURLのリスト形式で
+            - 問題がない場合: 「指摘事項なし」
+
+      - name: Write summary
+        if: always()
+        run: |
+          echo '</details>' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '## レビュー結果' >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/result.md ]; then
+            cat /tmp/result.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo '（結果ファイルが見つかりませんでした）' >> $GITHUB_STEP_SUMMARY
+          fi
