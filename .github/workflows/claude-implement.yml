@@ -8,7 +8,7 @@ jobs:
   implement:
     if: |
       github.event.issue.pull_request == null &&
-      contains(github.event.comment.body, '@claude')
+      contains(github.event.comment.body, '@claude implement')
     runs-on: ubuntu-latest
     permissions:
       contents: write
