@@ -16,13 +16,11 @@ jobs:
         with:
           ref: main
 
-      - name: Start collapsible log section
-        run: echo '<details><summary>実行ログ</summary>' >> $GITHUB_STEP_SUMMARY
-
       - name: Analyze with Claude Code
         uses: anthropics/claude-code-action@beta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_STEP_SUMMARY: /dev/null
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -84,8 +82,6 @@ jobs:
       - name: Write summary
         if: always()
         run: |
-          echo '</details>' >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
           echo '## レビュー結果' >> $GITHUB_STEP_SUMMARY
           if [ -f /tmp/result.md ]; then
             cat /tmp/result.md >> $GITHUB_STEP_SUMMARY
