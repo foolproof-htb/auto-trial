@@ -3,8 +3,16 @@ class TasksController < ApplicationController
 
   def index
     @tasks = Task.includes(:tags).by_due_date
-    @tasks = @tasks.where(status: params[:status]) if params[:status].present?
-    @tasks = @tasks.joins(:tags).where(tags: { id: params[:tag_id] }) if params[:tag_id].present?
+
+    if params[:status].present?
+      @tasks = @tasks.where(status: params[:status]) if Task.statuses.key?(params[:status])
+    end
+
+    if params[:tag_id].present?
+      tag_id = params[:tag_id].to_i
+      @tasks = @tasks.joins(:tags).where(tags: { id: tag_id }) if tag_id > 0 && Tag.exists?(tag_id)
+    end
+
     @tags = Tag.order(:name)
   end
 
